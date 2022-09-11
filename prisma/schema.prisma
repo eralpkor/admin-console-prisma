@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Job {
+  id          Int        @id @default(autoincrement())
+  dueDate     DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  title       String     @db.VarChar(255)
+  description String     @db.VarChar(1024)
+  inProgress  InProgress @default(OPEN)
+  User        User       @relation(fields: [userId], references: [id])
+  userId      Int
+  adminId     Int
+  Customer    Customer   @relation(fields: [customerId], references: [id])
+  customerId  Int
+  deleted     Boolean    @default(false)
+  Comment     Comment[]
+  total       Float      @default(0) @db.DoublePrecision
+  balance     Float      @default(0) @db.DoublePrecision
+  Payment     Payment[]
+}
+
+model Payment {
+  id          Int         @id @default(autoincrement())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  Job         Job         @relation(fields: [jobId], references: [id])
+  jobId       Int
+  paymentType PaymentType @default(CASH)
+  User        User        @relation(fields: [userId], references: [id])
+  userId      Int
+  editedBy    Int
+  checkNumber String?
+  amountPaid  Float       @default(0) @db.DoublePrecision
+  deleted     Boolean     @default(false)
+}
+
+enum InProgress {
+  OPEN
+  INPROGRESS
+  CLOSED
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  firstName String
+  lastName  String
+  phone     String?
+  company   String?
+  jobs      Job[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deleted   Boolean  @default(false)
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  comment   String   @db.VarChar(1024)
+  User      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  editedBy  Int
+  Job       Job      @relation(fields: [jobId], references: [id])
+  jobId     Int
+  deleted   Boolean  @default(false)
+}
+
+enum PaymentType {
+  CHECK
+  CASH
+  CREDIT
+  ACH
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String    @unique
+  username  String    @unique
+  password  String
+  Jobs      Job[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  role      Role      @default(USER)
+  deleted   Boolean   @default(false)
+  Comment   Comment[]
+  Payment   Payment[]
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  USER
+}
