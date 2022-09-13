@@ -12,37 +12,50 @@ datasource db {
 
 model Job {
   id          Int        @id @default(autoincrement())
-  dueDate     DateTime   @default(now())
+  dueDate     String
   createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  updatedAt   String
   title       String     @db.VarChar(255)
   description String     @db.VarChar(1024)
   inProgress  InProgress @default(OPEN)
-  User        User       @relation(fields: [userId], references: [id])
+  user        User       @relation(fields: [userId], references: [id])
   userId      Int
   adminId     Int
-  Customer    Customer   @relation(fields: [customerId], references: [id])
+  customer    Customer   @relation(fields: [customerId], references: [id])
   customerId  Int
   deleted     Boolean    @default(false)
-  Comment     Comment[]
   total       Float      @default(0) @db.DoublePrecision
   balance     Float      @default(0) @db.DoublePrecision
-  Payment     Payment[]
+  payment     Payment[]
+  comment     Comment[]
 }
 
 model Payment {
   id          Int         @id @default(autoincrement())
   createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  Job         Job         @relation(fields: [jobId], references: [id])
-  jobId       Int
+  updatedAt   String
   paymentType PaymentType @default(CASH)
-  User        User        @relation(fields: [userId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
   userId      Int
   editedBy    Int
   checkNumber String?
   amountPaid  Float       @default(0) @db.DoublePrecision
+  job         Job         @relation(fields: [jobId], references: [id])
+  jobId       Int
   deleted     Boolean     @default(false)
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt String
+  comment   String   @db.VarChar(1024)
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  editedBy  Int
+  job       Job      @relation(fields: [jobId], references: [id])
+  jobId     Int
+  deleted   Boolean  @default(false)
 }
 
 enum InProgress {
@@ -60,20 +73,8 @@ model Customer {
   company   String?
   jobs      Job[]
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deleted   Boolean  @default(false)
-}
-
-model Comment {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  comment   String   @db.VarChar(1024)
-  User      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  editedBy  Int
-  Job       Job      @relation(fields: [jobId], references: [id])
-  jobId     Int
+  updatedAt String
+  comment   String?
   deleted   Boolean  @default(false)
 }
 
@@ -93,11 +94,11 @@ model User {
   password  String
   Jobs      Job[]
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  updatedAt String
   role      Role      @default(USER)
   deleted   Boolean   @default(false)
-  Comment   Comment[]
-  Payment   Payment[]
+  payment   Payment[]
+  comment   Comment[]
 }
 
 enum Role {
