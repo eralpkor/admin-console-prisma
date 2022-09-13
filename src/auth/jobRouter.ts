@@ -1,10 +1,10 @@
-import { Prisma, PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 import { Router } from 'express';
-import { userInfo } from 'os';
 const router = Router();
 import url from 'url'
-const querystring = require('querystring');
+const querystring = require('querystring')
+var timestamp = new Date().toLocaleDateString();
 
 router.get('/jobs', async (req, res) => {
   const filter = req.originalUrl
@@ -93,24 +93,38 @@ router.post(`/jobs`, async (req, res) => {
         userId: 1,
         adminId: 1,
         customerId: 1,
+        dueDate: job.dueDate,
         total: job.total,
         balance: job.total - job.amountPaid,
-        Payment: {
+        updatedAt: timestamp,
+        payment: {
           create: [
             {
+              updatedAt: timestamp,
               userId: job.userId,
               editedBy: 1,
               amountPaid: job.amountPaid,
+              paymentType: job.paymentType,
+              checkNumber: job.checkNumber,
+            }
+          ]
+        },
+        comment: {
+          create: [
+            {
+              updatedAt: timestamp,
+              comment: job.comment,
+              userId: job.userId,
+              editedBy: job.adminId,
             }
           ]
         }
       }
     })
-    console.log(newJob);
     res.status(201).json(newJob)
   } catch (error) {
-    console.log(error);
-    res.status(500).json(error)
+    console.log("Server error ", error);
+    res.status(500).json({ error: "Server error " });
   }
 })
 
@@ -131,13 +145,43 @@ router.put("/jobs/:id", async (req, res) => {
 
   try {
     if (job) {
-      const job = await prisma.job.update({
+      const newJob = await prisma.job.update({
         where: { id: +id },
-        data: changes,
+        data: {
+          title: changes.title,
+          description: changes.description,
+          inProgress: changes.inProgress,
+          updatedAt: timestamp,
+          dueDate: changes.dueDate,
+          userId: 1,
+          adminId: 1,
+          customerId: 1,
+          total: changes.total,
+          balance: changes.total - changes.amountPaid,
+
+          // Payment: {
+          //   update: {
+          //     where: { jobId: +id},
+          //     data: {
+          //       updatedAt: timestamp,
+          //       paymentType: changes.paymentType,
+          //       checkNumber: changes.checkNumber,
+          //       amountPaid: changes.amountPaid,
+          //       editedBy: changes.editedBy,
+          //       userId: changes.userId,
+          //     }
+          //   }
+          // }
+        },
       })
+      console.log(newJob);
+      res.status(201).json(newJob)
+    } else {
+      res.status(400).json({ message: "That job does not exist" });
     }
   } catch (error) {
-    
+    console.log("Server error ", error);
+    res.status(500).json({ error: "Server error " });
   }
 
 })
