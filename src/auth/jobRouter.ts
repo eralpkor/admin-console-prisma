@@ -7,12 +7,20 @@ const querystring = require('querystring')
 var timestamp = new Date().toLocaleDateString();
 
 router.get('/jobs', async (req, res) => {
+  let search, order, range
   const filter = req.originalUrl
   const parsedUrl = url.parse(filter);
   const parsedQs = await querystring.parse(parsedUrl.query);
-  const search = await JSON.parse(parsedQs.filter)
-  const order = await JSON.parse(parsedQs.sort)
-  const range = await JSON.parse(parsedQs.range)
+
+  if (parsedQs.filter) {
+    search = await JSON.parse(parsedQs.filter)
+  }
+  if (parsedQs.sort) {
+    order = await JSON.parse(parsedQs.sort)
+  }
+  if (parsedQs.range) {
+    range = await JSON.parse(parsedQs.range)
+  }
 
   // get all jobs, pagination, filter and sorting included
   const jobs = await prisma.job.findMany({
@@ -157,24 +165,9 @@ router.put("/jobs/:id", async (req, res) => {
           adminId: 1,
           customerId: 1,
           total: changes.total,
-          balance: changes.total - changes.amountPaid,
-
-          // Payment: {
-          //   update: {
-          //     where: { jobId: +id},
-          //     data: {
-          //       updatedAt: timestamp,
-          //       paymentType: changes.paymentType,
-          //       checkNumber: changes.checkNumber,
-          //       amountPaid: changes.amountPaid,
-          //       editedBy: changes.editedBy,
-          //       userId: changes.userId,
-          //     }
-          //   }
-          // }
         },
       })
-      console.log(newJob);
+      
       res.status(201).json(newJob)
     } else {
       res.status(400).json({ message: "That job does not exist" });
@@ -183,7 +176,6 @@ router.put("/jobs/:id", async (req, res) => {
     console.log("Server error ", error);
     res.status(500).json({ error: "Server error " });
   }
-
 })
 
 export default router
