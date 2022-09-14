@@ -6,6 +6,7 @@ import url from 'url'
 const querystring = require('querystring')
 var timestamp = new Date().toLocaleDateString()
 
+// GET all payments
 router.get('/payment', async (req, res) => {
   let search, order, range
   const filter = req.originalUrl
@@ -80,13 +81,6 @@ router.put('/payment/:id', async (req, res) => {
     where: { id: payment?.jobId }
   })
 
-  const paymentTotal = await prisma.payment.aggregate({
-    where: { jobId: payment?.jobId },
-    _sum: { amountPaid: true  }
-  })
-  console.log("job id ", job?.total);
-console.log("payment total ", paymentTotal._sum.amountPaid);
-
   try {
     if (payment && job) {
       const editPayment = await prisma.payment.update({
@@ -97,15 +91,22 @@ console.log("payment total ", paymentTotal._sum.amountPaid);
           editedBy: changes.editedBy,
           checkNumber: changes.checkNumber,
           amountPaid: changes.amountPaid,
-          job: {
-            update: {
-              balance: job!.total - paymentTotal._sum.amountPaid!
-            }
-          }
         }
       })
-      res.status(201).json(job)
-      console.log("job balance ", job?.balance);
+
+      const paymentTotal = await prisma.payment.aggregate({
+        where: { jobId: payment?.jobId },
+        _sum: { amountPaid: true  }
+      })
+
+      const updateBalance = await prisma.job.update({
+        where: { id: job!.id },
+        data: {
+          updatedAt: timestamp,
+          balance: job!.total - paymentTotal._sum.amountPaid!
+        }
+      })
+      res.status(201).json(editPayment)
     } else {
       res.status(400).json({ message: "That payment does not exist" });
     }
@@ -118,21 +119,14 @@ console.log("payment total ", paymentTotal._sum.amountPaid);
 // Add new payment by jobId
 router.post('/payment', async (req, res) => {
   const data = req.body
+
   const user = await prisma.user.findUnique({
     where: { id: data.userId}
   })
   const job = await prisma.job.findUnique({
     where: { id: data.jobId }
   })
-  const payment = await prisma.payment.findUnique({
-    where: {
-      id: data.jobId
-    }
-  })
   
-  console.log("user id ", user!.id);
-  console.log("job id ", job!.id);
-
   try {
     const newPayment = await prisma.payment.create({
       data: {
@@ -145,19 +139,19 @@ router.post('/payment', async (req, res) => {
         jobId: job!.id,
       }
     })
+
     const paymentTotal = await prisma.payment.aggregate({
-      where: { jobId: payment?.jobId },
+      where: { jobId: job!.id },
       _sum: { amountPaid: true  }
     })
-  
-    const total = paymentTotal._sum.amountPaid! + newPayment.amountPaid
+
     const updateBalance = await prisma.job.update({
-      where: { id: payment?.jobId},
+      where: { id: data!.jobId },
       data: {
-        balance: job!.total - total
+        updatedAt: timestamp,
+        balance: job!.total - paymentTotal._sum.amountPaid!
       }
     })
-    console.log(newPayment, updateBalance);
     res.status(201).json(newPayment)
   } catch (error) {
     console.log("Server error ", error);
