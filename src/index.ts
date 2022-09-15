@@ -5,7 +5,8 @@ import helmet from 'helmet'
 import userRouter  from './auth/userRouter'
 import jobRouter from './auth/jobRouter'
 import commentRouter from './auth/commentRouter'
-import customerRouter from "./auth/customerRouter";
+import customerRouter from "./auth/customerRouter"
+import paymentRouter from './auth/paymentRouter'
 
 const app = express()
 
@@ -26,6 +27,7 @@ app.use('/api', userRouter)
 app.use('/api', jobRouter)
 app.use('/api', commentRouter)
 app.use('/api', customerRouter)
+app.use('/api', paymentRouter)
 
 const PORT = 5000
 const server = app.listen(PORT, () =>
